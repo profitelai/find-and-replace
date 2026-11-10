@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Find &amp; Replace · Profitell</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1b1f27;--mut:#667085;--line:#e3e6ec;--acc:#2457d6;--accink:#fff;--ok:#127a3d;--bad:#b42318;--warn:#a15c00;--del:#fde8e8;--add:#e3f6e8;--mark:#fff1a8;--code:#f0f2f6;--dg:#b42318}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1218;--card:#171b23;--ink:#e8ebf0;--mut:#98a2b3;--line:#272d38;--acc:#6b93ff;--accink:#0b1020;--ok:#4cc27d;--bad:#ff8b80;--warn:#f0b04a;--del:#3a1f22;--add:#17301f;--mark:#5a4b00;--code:#1e232d;--dg:#c8321f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+header{padding:14px 20px;border-bottom:1px solid var(--line);background:var(--card);display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+header h1{font-size:17px;margin:0}header span{color:var(--mut);font-size:13px}
+main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;padding:16px 20px;max-width:1500px;margin:0 auto}
+@media (max-width:980px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:0 0 10px}
+label{display:block;font-size:13px;color:var(--mut);margin:8px 0 3px}
+input[type=text],textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:14px ui-monospace,Menlo,Consolas,monospace}
+textarea{min-height:58px;resize:vertical}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:0 0 auto}.row>.grow{flex:1 1 220px}
+button{padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;cursor:pointer}
+button.pri{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:600}
+button.danger{background:var(--dg);border-color:var(--dg);color:#fff;font-weight:600}
+button:disabled{opacity:.45;cursor:not-allowed}
+.chk{display:inline-flex;gap:6px;align-items:center;font-size:14px;color:var(--ink);margin:0 14px 0 0}
+.mut{color:var(--mut);font-size:13px}.err{color:var(--bad)}.ok{color:var(--ok)}.warn{color:var(--warn)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+.file{border:1px solid var(--line);border-radius:8px;margin:8px 0;overflow:hidden}
+.fh{display:flex;gap:10px;align-items:center;padding:8px 10px;background:var(--code);cursor:pointer}.fh .p{flex:1;word-break:break-all}
+.m{display:grid;grid-template-columns:22px 56px 1fr;gap:8px;padding:6px 10px;border-top:1px solid var(--line);align-items:start}
+.ln{color:var(--mut);font:12px ui-monospace,monospace;padding-top:2px}
+.snip{font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.snip .b{background:var(--del);display:block;padding:1px 6px;border-radius:4px}.snip .a{background:var(--add);display:block;padding:1px 6px;border-radius:4px;margin-top:2px}
+mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
+.sum{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:6px 0 10px}
+.big{font-size:20px;font-weight:700}
+.ver{padding:9px 10px;border:1px solid var(--line);border-radius:8px;margin:6px 0;cursor:pointer}
+.ver.cur{border-color:var(--acc);box-shadow:inset 3px 0 0 var(--acc)}.ver.future{opacity:.55}
+.ver .t{font-weight:600;word-break:break-all}
+.diff{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;background:var(--code);border-radius:8px;padding:8px;max-height:340px;overflow:auto}
+.diff .d{background:var(--del);display:block}.diff .i{background:var(--add);display:block}.diff .h{color:var(--mut);display:block}
+.dirs{max-height:170px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:8px}
+.dirs div{padding:6px 10px;border-bottom:1px solid var(--line);cursor:pointer}.dirs div:hover{background:var(--code)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;max-width:90vw;z-index:9}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);max-width:520px;padding:20px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.hint{font-size:12.5px;color:var(--mut);margin-top:4px}
+</style>
+</head>
+<body>
+<div id="stale" hidden style="background:#b42318;color:#fff;padding:12px 20px;font-weight:600">This tool is running an OLDER version in the background, so the exclusion boxes would be ignored. Stop it (Ctrl+C in its terminal tab) and start it again with ./run.sh, then reload this page.</div>
+<header><h1>Find &amp; Replace</h1><span>by Profitell · works on your own computer · every replace is saved so you can go back</span></header>
+<main>
+<section>
+  <div class="card">
+    <h2>1 · Folder</h2>
+    <div class="row"><input class="grow" type="text" id="root" placeholder="/Users/you/projects/my-site" spellcheck="false"><button id="pick">Choose folder…</button><button id="browse">Browse</button></div>
+    <div id="dirs" class="dirs" hidden></div>
+    <div class="hint">Only files inside this folder are touched. Dot-files and dot-folders such as <span class="mono">.env</span>, <span class="mono">.env.local</span>, <span class="mono">.htaccess</span> and <span class="mono">.github/</span> ARE searched. Skipped: <span class="mono">.git .vscode .idea .cache node_modules venv dist build</span> and binary files.</div>
+  </div>
+  <div class="card">
+    <h2>2 · Find and replace</h2>
+    <label for="find">Find</label><textarea id="find" spellcheck="false"></textarea>
+    <label for="rep">Replace with <span class="mut">(leave empty to delete the found text)</span></label><textarea id="rep" spellcheck="false"></textarea>
+    <div style="margin-top:10px">
+      <label class="chk"><input type="checkbox" id="case"> Match case</label>
+      <label class="chk"><input type="checkbox" id="word"> Whole word</label>
+      <label class="chk"><input type="checkbox" id="regex"> Pattern (regex)</label>
+    </div>
+    <div class="hint" id="rxhint" hidden>Pattern mode: use <span class="mono">( )</span> to capture and <span class="mono">$1</span> or <span class="mono">\1</span> in the replacement to reuse it. <span class="mono">$$</span> gives a dollar sign.</div>
+    <h2 style="margin:16px 0 0">Exclusions <span style="text-transform:none;letter-spacing:0">(things to leave alone)</span></h2>
+    <div class="row" style="margin-top:0">
+      <div class="grow"><label for="prot">EXCLUDE words: never change inside these texts <span class="mut">(one per line)</span></label><textarea id="prot" spellcheck="false" placeholder="example: JetBrains (grey = just an example, not applied)"></textarea></div>
+      <div class="grow"><label for="skl">EXCLUDE lines that contain <span class="mut">(one per line)</span></label><textarea id="skl" spellcheck="false" placeholder="example: do not edit (grey = just an example)"></textarea></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="grow"><label for="inc">Only these files <span class="mut">(optional, e.g. *.html, *.md)</span></label><input type="text" id="inc" spellcheck="false"></div>
+      <div class="grow"><label for="exc">EXCLUDE files <span class="mut">(optional, e.g. *.min.js)</span></label><input type="text" id="exc" spellcheck="false"></div>
+    </div>
+    <div class="row" style="margin-top:12px"><button class="pri" id="search">Search (preview only)</button><span id="status" class="mut"></span></div>
+  </div>
+  <div class="card" id="results" hidden>
+    <h2>3 · Review and replace</h2>
+    <div class="sum"><span class="big" id="tot"></span><span class="mut" id="sub"></span>
+      <span style="flex:1"></span><button id="all">Select all</button><button id="none">Select none</button><button class="danger" id="go">Replace selected…</button></div>
+    <div id="list"></div>
+  </div>
+</section>
+<aside>
+  <div class="card">
+    <h2>Versions</h2>
+    <div class="row"><button id="back">◀ Back</button><button id="fwd">Forward ▶</button><span class="mut" id="pos"></span></div>
+    <div class="hint">Each replace is saved before anything changes. Click a version to see exactly what changed, or go to it.</div>
+    <div id="vers" style="margin-top:8px"></div>
+  </div>
+  <div class="card" id="diffcard" hidden>
+    <h2 id="diffh">Changes</h2>
+    <div class="row" style="margin-bottom:8px"><button id="gotov" class="pri"></button></div>
+    <div id="diffbody"></div>
+  </div>
+</aside>
+</main>
+<dialog id="dlg"><div id="dlgbody"></div><div class="row" style="margin-top:16px;justify-content:flex-end"><button id="dno">Cancel</button><button id="dyes" class="danger">Yes, replace</button></div></dialog>
+<div id="toast" class="toast" hidden></div>
+<script>
+const TOKEN="__TOKEN__";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+async function api(path,body){
+  const o={headers:{"X-Token":TOKEN}};
+  if(body!==undefined){o.method="POST";o.headers["Content-Type"]="application/json";o.body=JSON.stringify(body)}
+  const r=await fetch(path,o);let j={};try{j=await r.json()}catch(e){}
+  if(!r.ok)throw new Error(j.error||("Error "+r.status));return j}
+function toast(m,ms=3500){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,ms)}
+const st={scan:null,sel:{},hist:null,viewing:null};
+try{const s=JSON.parse(localStorage.getItem("pfr")||"{}");for(const k of["root","find","rep","inc","exc","prot","skl"])if(s[k])$("#"+k).value=s[k]}catch(e){}
+function save(){try{localStorage.setItem("pfr",JSON.stringify({root:$("#root").value,find:$("#find").value,rep:$("#rep").value,inc:$("#inc").value,exc:$("#exc").value,prot:$("#prot").value,skl:$("#skl").value}))}catch(e){}}
+const params=()=>({root:$("#root").value.trim(),find:$("#find").value,replace:$("#rep").value,case:$("#case").checked,whole_word:$("#word").checked,regex:$("#regex").checked,include:$("#inc").value,exclude:$("#exc").value,protect:$("#prot").value,skip_lines:$("#skl").value});
+$("#regex").onchange=()=>$("#rxhint").hidden=!$("#regex").checked;
+
+// folder
+$("#pick").onclick=async()=>{try{const r=await api("/api/pick",{});$("#root").value=r.path;save();loadHist()}catch(e){toast(e.message)}};
+$("#browse").onclick=()=>{const d=$("#dirs");d.hidden=!d.hidden;if(!d.hidden)ls($("#root").value.trim()||"~")};
+async function ls(p){try{const r=await api("/api/ls?path="+encodeURIComponent(p));const d=$("#dirs");
+  d.innerHTML=`<div class="mut mono" data-use="${esc(r.path)}">✔ Use this folder: ${esc(r.path)}</div>`+(r.parent?`<div data-go="${esc(r.parent)}">⬆ ..</div>`:"")+r.dirs.map(n=>`<div data-go="${esc(r.path+"/"+n)}">📁 ${esc(n)}</div>`).join("")}catch(e){toast(e.message)}}
+$("#dirs").onclick=e=>{const t=e.target.closest("div");if(!t)return;if(t.dataset.use){$("#root").value=t.dataset.use;$("#dirs").hidden=true;save();loadHist()}else if(t.dataset.go)ls(t.dataset.go)};
+$("#root").onchange=()=>{save();loadHist()};["find","rep","inc","exc","prot","skl"].forEach(i=>$("#"+i).addEventListener("input",save));
+
+// search
+$("#search").onclick=async()=>{
+  const p=params();if(!p.root)return toast("Choose a folder first.");if(!p.find)return toast("Type what to find.");
+  $("#status").textContent="Searching…";$("#search").disabled=true;
+  try{const r=await api("/api/scan",p);st.scan=r;st.sel={};
+    for(const f of r.files)st.sel[f.path]=new Set(f.matches.map(m=>m.i));
+    $("#status").textContent="";render()}catch(e){$("#status").innerHTML=`<span class="err">${esc(e.message)}</span>`}
+  finally{$("#search").disabled=false}};
+function snip(parts,cls){const[pre,mid,post]=parts;return `<span class="${cls}">${esc(pre)}<mark>${esc(mid)}</mark>${esc(post)}</span>`}
+function render(){
+  const r=st.scan;$("#results").hidden=false;
+  if(!r.files.length){$("#tot").textContent="No matches";$("#sub").innerHTML=`Looked in ${r.scanned} text files.`+(r.excluded?` <b>${r.excluded} match(es) were left alone</b> by your exclusions.`:"");$("#list").innerHTML="";$("#go").disabled=true;return}
+  $("#sub").innerHTML=`in ${r.files.length} file(s) · ${r.scanned} text files searched`+(r.skipped.length?` · ${r.skipped.length} skipped (not UTF-8 text or too large)`:"")+(r.excluded?` · <b>${r.excluded} match(es) left alone</b> by your exclusions`:"")+(r.preview_capped?" · preview limited, unshown matches follow your file choice":"");
+  $("#list").innerHTML=r.files.map((f,fi)=>{
+    const sel=st.sel[f.path];const all=sel.size===f.count;
+    return `<div class="file"><div class="fh" data-fi="${fi}"><input type="checkbox" data-file="${fi}" ${all?"checked":""} ${!all&&sel.size?'data-partial="1"':""}><span class="p mono">${esc(f.path)}</span><span class="mut">${f.count} match${f.count>1?"es":""}</span></div>`+
+    f.matches.map(m=>`<div class="m"><input type="checkbox" data-fi="${fi}" data-i="${m.i}" ${sel.has(m.i)?"checked":""}><span class="ln">line ${m.line}</span><div class="snip">${snip(m.before,"b")}${snip(m.after,"a")}</div></div>`).join("")+
+    (f.truncated?`<div class="m"><span></span><span></span><span class="mut">…more matches in this file (all are included when the file is selected)</span></div>`:"")+`</div>`}).join("");
+  document.querySelectorAll("[data-partial]").forEach(c=>c.indeterminate=true);updateTotals()}
+function selectedCount(){let n=0;for(const f of st.scan.files)n+=st.sel[f.path].size+(st.sel[f.path].size===f.matches.length&&f.truncated?f.count-f.matches.length:0);return n}
+function updateTotals(){const r=st.scan;const n=selectedCount();const files=r.files.filter(f=>st.sel[f.path].size).length;
+  $("#tot").textContent=`${n} of ${r.total} selected`;$("#go").textContent=`Replace ${n} in ${files} file(s)…`;$("#go").disabled=n===0}
+$("#list").addEventListener("change",e=>{const c=e.target;if(c.dataset.file!==undefined){const f=st.scan.files[+c.dataset.file];st.sel[f.path]=c.checked?new Set(f.matches.map(m=>m.i)):new Set();render()}
+  else if(c.dataset.i!==undefined){const f=st.scan.files[+c.dataset.fi];const s=st.sel[f.path];c.checked?s.add(+c.dataset.i):s.delete(+c.dataset.i);render()}});
+$("#list").addEventListener("click",e=>{const h=e.target.closest(".fh");if(h&&e.target.tagName!=="INPUT"){const fi=+h.dataset.fi;const el=h.parentElement;[...el.querySelectorAll(".m")].forEach(x=>x.hidden=!x.hidden)}});
+$("#all").onclick=()=>{for(const f of st.scan.files)st.sel[f.path]=new Set(f.matches.map(m=>m.i));render()};
+$("#none").onclick=()=>{for(const f of st.scan.files)st.sel[f.path]=new Set();render()};
+
+// replace
+$("#go").onclick=()=>{const n=selectedCount();const files=st.scan.files.filter(f=>st.sel[f.path].size).length;
+  $("#dlgbody").innerHTML=`<h3 style="margin:0 0 8px">Replace ${n} match(es) in ${files} file(s)?</h3><p>This changes the files on disk. A restore point is saved first, so you can go Back from the Versions panel at any time.</p><p class="mono" style="background:var(--code);padding:8px;border-radius:8px;word-break:break-all">${esc($("#find").value)} <b>→</b> ${esc($("#rep").value)||"<i>(nothing: delete)</i>"}</p>`;$("#dlg").showModal()};
+$("#dno").onclick=()=>$("#dlg").close();
+$("#dyes").onclick=async()=>{$("#dlg").close();const p=params();const selection={};
+  for(const f of st.scan.files){const s=st.sel[f.path];if(!s.size)continue;const full=s.size===f.count||(s.size===f.matches.length&&f.truncated);selection[f.path]={hash:f.hash,indices:full?null:[...s]}}
+  try{const r=await api("/api/apply",{...p,selection,note:""});
+    let m=`Replaced ${r.replacements} in ${r.changed} file(s). Saved as version ${r.version}.`;if(r.conflicts.length)m+=` ${r.conflicts.length} file(s) skipped (changed since you searched).`;
+    if(!r.version)m="Nothing was changed."+(r.conflicts.length?` ${r.conflicts.length} file(s) changed since you searched; search again.`:"");
+    toast(m,6000);$("#results").hidden=true;st.scan=null;await loadHist()}catch(e){toast(e.message,6000)}};
+
+// history
+async function loadHist(){const root=$("#root").value.trim();if(!root){$("#vers").innerHTML="";return}
+  try{const h=await api("/api/history?root="+encodeURIComponent(root));st.hist=h;renderHist()}catch(e){st.hist=null;$("#vers").innerHTML=`<div class="mut">${esc(e.message)}</div>`;$("#pos").textContent=""}}
+function renderHist(){const h=st.hist;if(!h)return;const vs=h.versions;
+  $("#pos").textContent=vs.length?`at version ${h.head} of ${vs.length}`:"no versions yet";$("#back").disabled=h.head<1;$("#fwd").disabled=h.head>=vs.length;
+  const orig=`<div class="ver ${h.head===0?"cur":""}" data-n="0"><div class="t">Original (before any replace)</div><div class="mut">start</div></div>`;
+  $("#vers").innerHTML=vs.slice().reverse().map(v=>`<div class="ver ${v.n===h.head?"cur":""} ${v.n>h.head?"future":""}" data-n="${v.n}"><div class="t mono">${esc(v.find)} → ${esc(v.replace)||"∅"}</div><div class="mut">v${v.n} · ${esc(v.time)} · ${v.replacements} in ${v.files} file(s)${v.regex?" · pattern":""}${(v.protect&&v.protect.length)?" · protected: "+esc(v.protect.join(", ")):""}${(v.skip_lines&&v.skip_lines.length)?" · skipped lines with: "+esc(v.skip_lines.join(", ")):""}${v.n===h.head?" · <b>you are here</b>":""}</div></div>`).join("")+(vs.length?orig:"")}
+$("#vers").onclick=async e=>{const el=e.target.closest(".ver");if(!el)return;const n=+el.dataset.n;st.viewing=n;
+  $("#diffcard").hidden=false;const g=$("#gotov");
+  if(n===0){$("#diffh").textContent="Original";$("#diffbody").innerHTML='<div class="mut">The files as they were before your first replace.</div>';}
+  else{try{const d=await api(`/api/diff?root=${encodeURIComponent($("#root").value.trim())}&n=${n}`);$("#diffh").textContent=`Version ${n}: what changed`;
+    $("#diffbody").innerHTML=d.files.map(f=>`<div class="mono" style="margin:8px 0 4px;word-break:break-all"><b>${esc(f.path)}</b> <span class="mut">(${f.count})</span></div><div class="diff">${f.lines.map(l=>{const c=l.startsWith("+++")||l.startsWith("---")||l.startsWith("@@")?"h":l[0]==="+"?"i":l[0]==="-"?"d":"";return `<span class="${c}">${esc(l)}</span>`}).join("")}${f.truncated?"\n…truncated":""}</div>`).join("")}catch(x){$("#diffbody").innerHTML=`<span class="err">${esc(x.message)}</span>`}}
+  g.textContent=n===st.hist.head?"You are at this version":`Go to ${n===0?"original":"version "+n}`;g.disabled=n===st.hist.head};
+async function go(n,force){try{const r=await api("/api/goto",{root:$("#root").value.trim(),n,force});
+  if(r.needs_force){if(confirm("These files were edited outside this tool since that version:\n\n"+r.conflicts.map(c=>c.path).join("\n")+"\n\nGo there anyway? Your hand edits in those files will be overwritten (they are not saved in a version).")) return go(n,true);return}
+  toast(`Now at version ${r.head}. ${r.changed} file(s) restored.`);$("#diffcard").hidden=true;await loadHist()}catch(e){toast(e.message,6000)}}
+$("#back").onclick=()=>go(st.hist.head-1);$("#fwd").onclick=()=>go(st.hist.head+1);$("#gotov").onclick=()=>go(st.viewing);
+api("/api/info").then(i=>{if(!(i.features||[]).includes("exclusions"))$("#stale").hidden=false}).catch(()=>{$("#stale").hidden=false});
+loadHist();
+</script>
+</body>
+</html>
